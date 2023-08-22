@@ -5,6 +5,7 @@ import pybrightness
 import tempfile
 import pyautogui
 import webbrowser
+from PIL import ImageGrab
 from config import TOKEN
 #################################################################################################
 from keyboards.main_keyboard import maain_markup
@@ -46,27 +47,34 @@ def echo_message(message):
     except:
         bot.send_message(message.chat.id, 'Произошла непредвиденная ошибка')
 
-@bot.message_handler(regexp='Повысить громкость')
+@bot.message_handler(regexp='Изменить громкость')
 def echo_message(message):
-    comtypes.CoInitialize()
-    set_volume(0.7)
-    comtypes.CoUninitialize()
-    bot.send_message(message.chat.id, 'Изменено')
-
-
-@bot.message_handler(regexp='Понизить громкость')
+    bot.reply_to(message, 'Введите число, которому должна соответствовать текущая громкость:')
+    bot.register_next_step_handler(message, process)
+def process(message):
+    try:
+        volume = float(float(message.text) / 100)
+        comtypes.CoInitialize()
+        set_volume(volume)
+        comtypes.CoUninitialize()
+        bot.send_message(message.chat.id, 'Изменено')
+    except Exception as e:
+        bot.send_message(message.chat.id, f'Ошибка: {str(e)}')
+   
+@bot.message_handler(regexp='Изменить яркость')
 def echo_message(message):
-    comtypes.CoInitialize()
-    set_volume(0.5)
-    comtypes.CoUninitialize()
-    bot.send_message(message.chat.id, 'Изменено')    
-
-@bot.message_handler(regexp='Повысить яркость')
-def echo_message(message):
-    comtypes.CoInitialize()
-    pybrightness.custom(percent=98)
-    comtypes.CoUninitialize()
-    bot.send_message(message.chat.id, 'Изменено')
+    bot.reply_to(message, 'Введите число, которому должна соответствовать текущая яркость:')
+    bot.register_next_step_handler(message, process)
+def process(message):
+    try:
+        brightness = int(message.text)
+        comtypes.CoInitialize()
+        pybrightness.custom(percent=brightness)
+        comtypes.CoUninitialize()
+        bot.send_message(message.chat.id, 'Изменено')
+    except Exception as e:
+        bot.send_message(message.chat.id, f'Ошибка: {str(e)}')
+    
 
 @bot.message_handler(regexp='Понизить яркость')
 def echo_message(message):
@@ -107,12 +115,14 @@ def process_url(message):
 def echo_message(message):
     pyautogui.hotkey('alt', 'F4')
     bot.reply_to(message, 'Браузер закрыт')
-# @bot.message_handler(regexp='получить скриншот')
-# def echo_meesage(message):
-#     path = tempfile.gettempdir() + 'screenshot.png'
-#     screenshot = ImageGrab.grab()
-#     screenshot.save(path, 'PNG')
-#     bot.send_photo(message.chat.id, open(path, 'rb'))
+
+
+@bot.message_handler(regexp='получить скриншот')
+def echo_meesage(message):
+    path = tempfile.gettempdir() + 'screenshot.png'
+    screenshot = ImageGrab.grab()
+    screenshot.save(path, 'PNG')
+    bot.send_photo(message.chat.id, open(path, 'rb'))
 
 # @bot.message_handler(regexp='перезапустить') #вызов по команде /restart; можно сделать и на кнопку
 # def restart(message):
