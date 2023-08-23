@@ -19,11 +19,35 @@ from functions.system import set_volume, set_brightness
 from functions.system_information import *
 
 
-bot = telebot.TeleBot(TOKEN)
+
 default_volume = 0.2
 keyboard = types.InlineKeyboardMarkup()
 back_button = types.InlineKeyboardButton('Назад', callback_data='back')
 keyboard.add(back_button)
+
+
+
+def create_file():
+    code = input("Введите код: ")
+    with open("code.txt", "w") as file:
+        file.write(code)
+
+def read_file():
+    if os.path.exists("code.txt"):
+        with open("code.txt", "r") as file:
+            code = file.read()
+            return code
+    else:
+        return None
+
+code = read_file()
+if code is None:
+    create_file()
+else:
+        print("Найден код в файле:")
+        print(code)
+
+bot = telebot.TeleBot(token=code)
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
