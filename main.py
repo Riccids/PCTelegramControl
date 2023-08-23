@@ -132,8 +132,6 @@ def echo_message(message):
 def echo_message(message):
     next_video(bot, message)
 
-
-
 ##################################ДЕЙСТВИЯ С ЭКРАНОМ#######################################
 @bot.message_handler(regexp='получить скриншот')
 def echo_meesage(message):
