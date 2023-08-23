@@ -1,6 +1,7 @@
 import comtypes
 import os
 import telebot
+from telebot import types
 import pybrightness
 import tempfile
 import pyautogui
@@ -20,6 +21,10 @@ from functions.system_information import *
 
 bot = telebot.TeleBot(TOKEN)
 default_volume = 0.2
+keyboard = types.InlineKeyboardMarkup()
+back_button = types.InlineKeyboardButton('Назад', callback_data='back')
+keyboard.add(back_button)
+
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.send_message(message.chat.id, '🤗', reply_markup= maain_markup)

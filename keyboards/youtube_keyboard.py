@@ -2,10 +2,10 @@ import telebot
 import pyautogui
 from config import TOKEN
 youtube_keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True,row_width=2)
-youtube_keyboard.add('▷/||')
-youtube_keyboard.add('Перемотать >>')
-youtube_keyboard.add('Перемотать <<')
-youtube_keyboard.add('Следующее видео ')
+youtube_keyboard.add('▷/||','Следующее видео')
+youtube_keyboard.add('Перемотать >>','Перемотать <<')
+youtube_keyboard.add('Назад')
+
 
 bot = telebot.TeleBot(token=TOKEN)
 
