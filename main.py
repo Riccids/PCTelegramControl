@@ -12,8 +12,10 @@ from keyboards.main_keyboard import maain_markup
 from keyboards.system_keyboard import system_keybpard
 from keyboards.browser_keyboard import browser_keyboard
 from keyboards.programs_keyboard import programs_keyboard
+from keyboards.youtube_keyboard import youtube_keyboard, pause_video, video_back, video_forward, next_video
 #################################################################################################
 from functions.system import set_volume, set_brightness
+from functions.system_information import *
 
 
 bot = telebot.TeleBot(TOKEN)
@@ -38,6 +40,7 @@ def show_system_keyboard(message):
 def show_system_keyboard(message):
     bot.send_message(message.chat.id, 'Программная клавиатура', reply_markup=programs_keyboard)
 
+################################################SYSTEM##################################################
 @bot.message_handler(regexp='выключить')
 def echo_message(message):
     bot.send_message(message.chat.id, 'Выключение...')
@@ -60,7 +63,7 @@ def process(message):
         bot.send_message(message.chat.id, 'Изменено')
     except Exception as e:
         bot.send_message(message.chat.id, f'Ошибка: {str(e)}')
-   
+
 @bot.message_handler(regexp='Изменить яркость')
 def echo_message(message):
     bot.reply_to(message, 'Введите число, которому должна соответствовать текущая яркость:')
@@ -73,17 +76,15 @@ def process(message):
         comtypes.CoUninitialize()
         bot.send_message(message.chat.id, 'Изменено')
     except Exception as e:
-        bot.send_message(message.chat.id, f'Ошибка: {str(e)}')
-    
+        bot.send_message(message.chat.id, f'Ошибка: {str(e)}') 
 
-@bot.message_handler(regexp='Понизить яркость')
+@bot.message_handler(regexp='о системе')
 def echo_message(message):
-    comtypes.CoInitialize()
-    pybrightness.custom(percent=70)
-    comtypes.CoUninitialize()
-    bot.send_message(message.chat.id, 'Изменено')
+    get_system_information(bot,message)
+    get_cpu_inforamtion(bot,message)
+    get_disk_usage(bot,message)
 
-
+######################################################BROWSER#############################################################
 @bot.message_handler(regexp='новая')
 def echo_message(message):
     url = 'ya.ru'
@@ -105,6 +106,8 @@ def process_url(message):
     if not url.startswith('http://') and not url.startswith('https://'):
         url = 'http://' + url
     try:
+        if 'youtube' in url:
+            bot.send_message(message.chat.id,'Обработка запроса...',reply_markup=youtube_keyboard)
         # Открытие ссылки в браузере
         webbrowser.open_new_tab(url)
         bot.reply_to(message, f'Открыта ссылка: {url}')
@@ -116,7 +119,22 @@ def echo_message(message):
     pyautogui.hotkey('alt', 'F4')
     bot.reply_to(message, 'Браузер закрыт')
 
+###################################YOUTUBE############################################################################################
+@bot.message_handler(regexp='>>')
+def echo_message(message):
+    video_forward(bot,message)
 
+@bot.message_handler(regexp='<<')
+def echo_message(message):
+    video_back(bot, message)
+
+@bot.message_handler(regexp='следующее видео')
+def echo_message(message):
+    next_video(bot, message)
+
+
+
+##################################ДЕЙСТВИЯ С ЭКРАНОМ#######################################
 @bot.message_handler(regexp='получить скриншот')
 def echo_meesage(message):
     path = tempfile.gettempdir() + 'screenshot.png'
@@ -124,6 +142,10 @@ def echo_meesage(message):
     screenshot.save(path, 'PNG')
     bot.send_photo(message.chat.id, open(path, 'rb'))
 
+
+@bot.message_handler(regexp='||')
+def echo_message(message):
+    pause_video(bot,message)
 # @bot.message_handler(regexp='перезапустить') #вызов по команде /restart; можно сделать и на кнопку
 # def restart(message):
 #   try:
