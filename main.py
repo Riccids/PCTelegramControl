@@ -6,20 +6,22 @@ import pybrightness
 import tempfile
 import pyautogui
 import webbrowser
+import openai
 from PIL import ImageGrab
-from config import TOKEN
+from config import TOKEN, OPENAI_TOKEN
 #################################################################################################
 from keyboards.main_keyboard import maain_markup
 from keyboards.system_keyboard import system_keybpard
 from keyboards.browser_keyboard import browser_keyboard
 from keyboards.programs_keyboard import programs_keyboard
 from keyboards.youtube_keyboard import youtube_keyboard, pause_video, video_back, video_forward, next_video
+from keyboards.social_keyboard import social_keyboard
 #################################################################################################
 from functions.system import set_volume, set_brightness
 from functions.system_information import *
 
 
-
+openai.api_key = OPENAI_TOKEN
 default_volume = 0.2
 keyboard = types.InlineKeyboardMarkup()
 back_button = types.InlineKeyboardButton('Назад', callback_data='back')
@@ -60,6 +62,7 @@ def start(message):
 @bot.message_handler(regexp='получить системную')
 def show_system_keyboard(message):
     bot.send_message(message.chat.id, 'Системная клавиатура', reply_markup=system_keybpard)
+
 
 @bot.message_handler(regexp='получить браузерную')
 def show_system_keyboard(message):
@@ -114,6 +117,28 @@ def echo_message(message):
     get_disk_usage(bot,message)
 
 ######################################################BROWSER#############################################################
+
+@bot.message_handler(regexp='Поиск по')
+def echo_message(message):
+    bot.reply_to(message, 'Введите запрос, который хотите отобразить на ютубе')
+    bot.register_next_step_handler(message, search_youtube)
+def search_youtube(message):
+    youtube_url = message.text.replace(' ','+')
+    # Проверка введенной ссылки
+    if not youtube_url.startswith('https://www.youtube.com/results?search_query='):
+        youtube_url = 'https://www.youtube.com/results?search_query=' + youtube_url
+    try:
+        bot.send_message(message.chat.id,'Обработка запроса...',reply_markup=youtube_keyboard)
+        # Открытие ссылки в браузере
+        webbrowser.open_new_tab(youtube_url)
+        bot.reply_to(message, f'Выполнен поиск по вашему запросу')
+        path = tempfile.gettempdir() + 'screenshot.png'
+        screenshot = ImageGrab.grab()
+        screenshot.save(path, 'PNG')
+        bot.send_photo(message.chat.id, open(path, 'rb'))
+    except Exception as e:
+        bot.reply_to(message, f'Ошибка при открытии ссылки: {str(e)}')
+
 @bot.message_handler(regexp='новая')
 def echo_message(message):
     url = 'ya.ru'
@@ -148,6 +173,31 @@ def echo_message(message):
     pyautogui.hotkey('alt', 'F4')
     bot.reply_to(message, 'Браузер закрыт')
 
+@bot.message_handler(regexp='соц.')
+def echo_message(message):
+    bot.send_message(message.chat.id, 'Клавиатура для соц. сетей', reply_markup=social_keyboard)
+
+@bot.message_handler(regexp='VK')
+def echo_message(message):
+    webbrowser.open_new_tab('vk.com')
+    bot.reply_to(message, 'Ссылка успешно открыта в новой вкладке')
+
+@bot.message_handler(regexp='Telegram')
+def echo_message(message):
+    webbrowser.open_new_tab('web.telegram.org')
+    bot.reply_to(message, 'Ссылка успешно открыта в новой вкладке')
+
+@bot.message_handler(regexp='Instagram')
+def echo_message(message):
+    webbrowser.open_new_tab('instagram.com')
+    bot.reply_to(message, 'Ссылка успешно открыта в новой вкладке')
+
+@bot.message_handler(regexp='Twitter')
+def echo_message(message):
+    webbrowser.open_new_tab('twitter.com')
+    bot.reply_to(message, 'Ссылка успешно открыта в новой вкладке')
+
+
 ###################################YOUTUBE############################################################################################
 @bot.message_handler(regexp='>>')
 def echo_message(message):
@@ -173,6 +223,8 @@ def echo_meesage(message):
 @bot.message_handler(regexp='||')
 def echo_message(message):
     pause_video(bot,message)
+
+
 # @bot.message_handler(regexp='перезапустить') #вызов по команде /restart; можно сделать и на кнопку
 # def restart(message):
 #   try:
