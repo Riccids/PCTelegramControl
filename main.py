@@ -6,7 +6,7 @@ import pybrightness
 import tempfile
 import pyautogui
 import webbrowser
-import openai
+import subprocess
 from PIL import ImageGrab
 from config import TOKEN, OPENAI_TOKEN
 #################################################################################################
@@ -21,7 +21,7 @@ from functions.system import set_volume, set_brightness
 from functions.system_information import *
 
 
-openai.api_key = OPENAI_TOKEN
+
 default_volume = 0.2
 keyboard = types.InlineKeyboardMarkup()
 back_button = types.InlineKeyboardButton('Назад', callback_data='back')
@@ -54,6 +54,76 @@ bot = telebot.TeleBot(token=code)
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.send_message(message.chat.id, '🤗', reply_markup= maain_markup)
+
+@bot.message_handler(commands=['add_app'])
+def add_app(message):
+    msg = bot.send_message(message.chat.id, "Введите имя приложения и путь к нему в формате 'Имя_приложения Путь_к_приложению':")
+    bot.register_next_step_handler(msg, save_app)
+
+def save_app(message):
+    try:
+        app_data = message.text.split()
+        app_name = app_data[0]
+        app_path = ' '.join(app_data[1:])
+        
+        with open('apps.txt', 'a') as file:
+            file.write(app_name + '\n')
+            file.write(app_path + '\n')
+        
+        bot.send_message(message.chat.id, f"Приложение {app_name} успешно добавлено!")
+    except:
+        bot.send_message(message.chat.id, "Что-то пошло не так. Пожалуйста, попробуйте снова.")
+
+@bot.message_handler(commands=['run_app'])
+def run_app(message):
+    program_name = bot.send_message(message.chat.id, "Введите имя приложения, которое хотите запустить:")
+    bot.register_next_step_handler(program_name, process_program_name)
+def process_program_name(message):
+    program_name = message.text
+    with open('apps.txt', 'r') as file:
+        lines = file.readlines()
+
+    for i in range(len(lines)):
+        if lines[i].strip() == program_name:
+            if i+1 < len(lines):
+                program_path = lines[i+1].strip()
+                try:
+                    subprocess.Popen(program_path)
+                    print(f"Программа '{program_name}' успешно запущена.")
+                except OSError as e:
+                    print(f"Ошибка при запуске программы '{program_name}': {e}")
+            else:
+                print(f"Не удалось найти путь для программы '{program_name}'.")
+            break
+    else:
+        print(f"Программа '{program_name}' не найдена в файле.")
+
+    bot.send_message(message.chat.id, "Ваше приложение успешно запущено!")
+
+
+@bot.message_handler(commands=['my_apps'])
+def show_my_apps(message):
+    with open('apps.txt', 'r') as file:
+        lines = file.readlines()
+
+    # Создаем список для хранения найденных приложений пользователя
+    user_apps = []
+
+    for i in range(len(lines)):
+        # Проверяем, является ли индекс строки нечетным числом
+        if i % 2 != 0:
+            continue
+
+        # Получаем имя приложения
+        app_name = lines[i].strip()
+        user_apps.append(app_name)
+
+    if user_apps:
+        # Формируем сообщение с приложениями пользователя, разделяя их переводом строки
+        apps_message = "\n".join(user_apps)
+        bot.send_message(message.chat.id, f"Ваши приложения:\n{apps_message}")
+    else:
+        bot.send_message(message.chat.id, "У вас нет зарегистрированных приложений.")
 
 @bot.message_handler(regexp='назад')
 def start(message):
