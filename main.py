@@ -76,29 +76,44 @@ def save_app(message):
 
 @bot.message_handler(commands=['run_app'])
 def run_app(message):
-    program_name = bot.send_message(message.chat.id, "Введите имя приложения, которое хотите запустить:")
-    bot.register_next_step_handler(program_name, process_program_name)
-def process_program_name(message):
-    program_name = message.text
+    programs = read_programs_from_file()
+    if programs:
+        buttons = create_inline_buttons(programs)
+        markup = create_inline_markup(buttons)
+        bot.send_message(message.chat.id, "Выберите приложение:", reply_markup=markup)
+    else:
+        bot.send_message(message.chat.id, "Нет доступных приложений.")
+
+def read_programs_from_file():
+    programs = []
     with open('apps.txt', 'r') as file:
         lines = file.readlines()
+    for i in range(0, len(lines), 2):
+        program_name = lines[i].strip()
+        program_path = lines[i+1].strip()
+        programs.append({'name': program_name, 'path': program_path})
+    return programs
 
-    for i in range(len(lines)):
-        if lines[i].strip() == program_name:
-            if i+1 < len(lines):
-                program_path = lines[i+1].strip()
-                try:
-                    subprocess.Popen(program_path)
-                    print(f"Программа '{program_name}' успешно запущена.")
-                except OSError as e:
-                    print(f"Ошибка при запуске программы '{program_name}': {e}")
-            else:
-                print(f"Не удалось найти путь для программы '{program_name}'.")
-            break
-    else:
-        print(f"Программа '{program_name}' не найдена в файле.")
+def create_inline_buttons(programs):
+    buttons = []
+    for program in programs:
+        button = types.InlineKeyboardButton(program['name'], callback_data=program['path'])
+        buttons.append(button)
+    return buttons
 
-    bot.send_message(message.chat.id, "Ваше приложение успешно запущено!")
+def create_inline_markup(buttons):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(*buttons)
+    return markup
+
+@bot.callback_query_handler(func=lambda call: True)
+def process_program_selection(call):
+    program_path = call.data
+    try:
+        subprocess.Popen(program_path)
+        bot.send_message(call.message.chat.id, f"Программа успешно запущена.")
+    except OSError as e:
+        bot.send_message(call.message.chat.id, f"Ошибка при запуске программы: {e}")
 
 
 @bot.message_handler(commands=['my_apps'])
